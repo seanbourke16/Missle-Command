@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Missle Command</string>
+    <string name="missle_command">Missle Command</string>
+    <string name="begin_game">Begin Game</string>
 </resources>
