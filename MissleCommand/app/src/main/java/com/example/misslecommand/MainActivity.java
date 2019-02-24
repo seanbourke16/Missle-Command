@@ -7,8 +7,11 @@ import android.graphics.Paint;
 import android.support.annotation.ColorInt;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.Button;
+import android.widget.LinearLayout;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -20,8 +23,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         CommandView commandView= new CommandView(this);
+        Button b=new Button(this);
+        b.setText("Start Game");
+        commandView.setBackgroundColor(Color.argb(1,0,0,1));
         setContentView(commandView);
-    }
+        Log.i("onCreate","App");
+        }
 
     class CommandView extends SurfaceView implements Runnable {
 
@@ -29,22 +36,26 @@ public class MainActivity extends AppCompatActivity {
         SurfaceHolder holder;
         Canvas canvas;
         Paint paint;
+        Command a;
+        Command b;
+        Command c;
 
 
         public CommandView(Context context){
             super(context);
             holder=getHolder();
+            paint=new Paint();
+            run();
+            Log.i("Command","Start");
         }
 
         public void run(){
+            Log.i("Run","Run");
             Random r=new Random();
-            //command a;
-            //command b;
-            //command c;
-            try {
-                wait(1000);
+            /*try {
+                //wait(1000);
             }
-            catch(InterruptedException e){}
+            catch(InterruptedException e){}*/
             int x=20;
             while(x>0) {
                 m = new ArrayList<Missle>();
@@ -55,6 +66,12 @@ public class MainActivity extends AppCompatActivity {
                 m.get(20 - x).dy = r.nextInt(30);
                 update();
                 draw();
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+
+                }
+                x--;
             }
         }
 
@@ -66,9 +83,10 @@ public class MainActivity extends AppCompatActivity {
 
         public void draw(){
             if(holder.getSurface().isValid()){
+                Log.i("Draw","Draw");
                 canvas=holder.lockCanvas();
                 canvas.drawColor(Color.argb(1,0,0,0));
-                paint.setColor(Color.argb(1,1,1,1));
+                paint.setColor(Color.argb(1,0,0,1));
                 canvas.drawLine(100,0,100,100,paint);
 
                 for(Missle x:m){
@@ -76,6 +94,9 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 holder.unlockCanvasAndPost(canvas);
+            }
+            else{
+                Log.i("Draw","No Draw");
             }
         }
 
