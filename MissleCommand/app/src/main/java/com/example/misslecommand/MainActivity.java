@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 
@@ -21,6 +22,7 @@ import java.util.Random;
 public class MainActivity extends AppCompatActivity {
 
     CommandView commandView;
+    float[] xy=new float[2];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +49,9 @@ public class MainActivity extends AppCompatActivity {
         int dx, dy;
         int height, width;
         ArrayList<Missle> m;
+        Command a;
+        Command b;
+        Command c;
 
         private long thisTimeFrame;
 
@@ -64,7 +69,14 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             Random r = new Random();
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            height = displayMetrics.heightPixels;
+            width = displayMetrics.widthPixels;
             m = new ArrayList();
+            a=new Command(0,width/5,height,width);
+            b=new Command(width/5*2,width/5*3,height,width);
+            c=new Command(width/5*4,width,height,width);
             posx = 50;
             posy = 50;
             dx = 20;
@@ -75,8 +87,8 @@ public class MainActivity extends AppCompatActivity {
                 m.add(new Missle());
                 m.get(i).x = r.nextInt(500);
                 m.get(i).y = 0;
-                m.get(i).dx = r.nextInt(20) - 10;
-                m.get(i).dy = 5;
+                m.get(i).dx = r.nextInt(6) - 3;
+                m.get(i).dy = r.nextInt(4)+2;
             }
 
 
@@ -84,6 +96,9 @@ public class MainActivity extends AppCompatActivity {
             {
                 if (!paused) {
                     update();
+                    a.update(height,width,canvas,paint);
+                    b.update(height,width,canvas,paint);
+                    c.update(height,width,canvas,paint);
                 }
                 checkCollision();
                 draw();
@@ -97,15 +112,14 @@ public class MainActivity extends AppCompatActivity {
 
         public void checkCollision(){
             for(int x=0;x<m.size();x++){
-                if
+                if(m.get(x).y>height-50){
+                    m.get(x).dx=0;
+                    m.get(x).dy=0;
+                }
             }
         }
-        public void update() {
 
-            DisplayMetrics displayMetrics = new DisplayMetrics();
-            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-            int height = displayMetrics.heightPixels;
-            int width = displayMetrics.widthPixels;
+        public void update() {
 
             y = y + 5;
             if (y > 200)
@@ -131,11 +145,11 @@ public class MainActivity extends AppCompatActivity {
                 height = canvas.getHeight();
 
                 // Draw the background color
-                canvas.drawColor(Color.argb(255, 26, 128, 182));
+                canvas.drawColor(Color.argb(255, 0, 0, 0));
 
                 // Choose the brush color for drawing
                 paint.setColor(Color.argb(255, 255, 255, 255));
-                canvas.drawLine(0, 0, 300, y, paint);
+                canvas.drawLine(0, height-50, width, height-50, paint);
 
 
                 // canvas.drawCircle(posx, posy, 30l, paint);
@@ -144,6 +158,11 @@ public class MainActivity extends AppCompatActivity {
                     //m.get(i).height = height;
                     m.get(i).draw(canvas, paint);
                 }
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(Color.argb(255,255,0,0));
+                a.draw(canvas,paint,1);
+                b.draw(canvas,paint,3);
+                c.draw(canvas,paint,5);
 
                 // canvas.drawCircle(b.x, b.y, 50, paint);
 
@@ -169,8 +188,41 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public boolean onTouchEvent(MotionEvent motionEvent) {
-            if (motionEvent.getAction() == android.view.MotionEvent.ACTION_DOWN)
-                paused = !paused;
+            if (motionEvent.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+                if(paused)paused = !paused;
+                xy[0] = motionEvent.getX();
+                xy[1] = motionEvent.getY();
+                int fire=0;
+                while(fire<3) {
+                    if (xy[0] < width / 3) {
+                        if (a.missles > 0) {
+                            fire=5;
+                            a.fire((int) xy[0], (int) xy[1]);
+                        } else {
+                            xy[0]+=width/3;
+                            fire++;
+                        }
+                    }
+                    if(xy[0]<width/3*2){
+                        if (b.missles > 0) {
+                            fire=5;
+                            b.fire((int) xy[0], (int) xy[1]);
+                        } else {
+                            xy[0]+=width/3;
+                            fire++;
+                        }
+                    }
+                    if(xy[0]<width){
+                        if (c.missles > 0) {
+                            fire=5;
+                            c.fire((int) xy[0], (int) xy[1]);
+                        } else {
+                            xy[0]=width/3;
+                            fire++;
+                        }
+                    }
+                }
+            }
             return true;
         }
 
@@ -267,7 +319,7 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
 
         // Tell the gameView pause method to execute
-        commandView.pause();
+        //commandView.pause();
     }
 
 
