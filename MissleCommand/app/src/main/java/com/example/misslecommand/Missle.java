@@ -21,8 +21,8 @@ public class Missle {
         explosion=false;
     }
     public void update(int height, int width){
-        Log.e("Width", "" + width);
-        Log.e("height", "" + height);
+        //Log.e("Width", "" + width);
+        //Log.e("height", " ui" + height);
         x+=dx;
         y+=dy;
         if(x<0)x=width;

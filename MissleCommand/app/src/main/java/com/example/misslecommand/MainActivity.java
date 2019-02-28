@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.support.annotation.ColorInt;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -13,8 +14,10 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.AbsoluteLayout;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -32,6 +35,10 @@ public class MainActivity extends AppCompatActivity {
         //Button b=new Button(this);
         //b.setText("Start Game");
         //commandView.setBackgroundColor(Color.argb(1,0,0,1));
+
+
+        //LinearLayout layout=new LinearLayout(this);
+        //layout.addView(textView);
         setContentView(commandView);
         Log.i("onCreate","App");
         }
@@ -41,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
         Thread gameThread = null;
         SurfaceHolder ourHolder;
         volatile boolean playing;
-        boolean paused = true;
+        boolean paused = false;
         Canvas canvas;
         Paint paint;
         int y;
@@ -52,19 +59,29 @@ public class MainActivity extends AppCompatActivity {
         Command a;
         Command b;
         Command c;
+        boolean start;
+        boolean game;
 
         private long thisTimeFrame;
 
         int level;
         int missles;
         int speed;
-
+        TextView textView;
 
         public CommandView(Context context) {
             super(context);
 
             ourHolder = getHolder();
             paint = new Paint();
+            textView=new TextView(context);
+            textView.setText("Start Game");
+            //textView.setWidth(100);
+            //textView.setHeight(100);
+            textView.setLayoutParams(new AbsoluteLayout.LayoutParams(100,100,100,100));
+            textView.setTextColor(Color.argb(255,255,255,255));
+            game=true;
+            start=false;
         }
 
         @Override
@@ -72,12 +89,13 @@ public class MainActivity extends AppCompatActivity {
             Random r = new Random();
             DisplayMetrics displayMetrics = new DisplayMetrics();
             getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-            height = displayMetrics.heightPixels;
-            width = displayMetrics.widthPixels;
+            width=displayMetrics.widthPixels;
+            height=displayMetrics.heightPixels;
             m = new ArrayList();
-            a=new Command(0,width/5,height,width);
-            b=new Command(width/5*2,width/5*3,height,width);
-            c=new Command(width/5*4,width,height,width);
+            Log.e("Height",height+" "+"o");
+            a=new Command(0,width/5);
+            b=new Command(width/5*2,width/5*3);
+            c=new Command(width/5*4,width);
             posx = 50;
             posy = 50;
             dx = 20;
@@ -96,12 +114,13 @@ public class MainActivity extends AppCompatActivity {
 
             while (playing)
             {
-                if(m.size()==0){
-                    startLevel(missles,speed);
-                    missles+=5;
-                    speed++;
-                }
-                if (!paused) {
+
+                if (start) {
+                    if(m.size()==0){
+                        startLevel(missles,speed);
+                        missles+=5;
+                        speed++;
+                    }
                     update();
                     a.update(height,width,canvas,paint);
                     b.update(height,width,canvas,paint);
@@ -111,6 +130,8 @@ public class MainActivity extends AppCompatActivity {
                 checkAirCollision(a.explosions());
                 checkAirCollision(b.explosions());
                 checkAirCollision(c.explosions());
+                height=a.height;
+                width=a.width;
                 draw();
                 try {
                     Thread.sleep(50);
@@ -118,6 +139,16 @@ public class MainActivity extends AppCompatActivity {
 
                 }
             }
+        }
+
+        public void gameOver(){
+            a.hit=false;
+            b.hit=false;
+            c.hit=false;
+            missles=0;
+            speed=4;
+            game=true;
+            start=true;
         }
 
         public void startLevel(int missles,int speed){
@@ -133,6 +164,11 @@ public class MainActivity extends AppCompatActivity {
             if(!b.hit)b.missles=9+(missles/5*2);
             if(!c.hit)c.missles=9+(missles/5*2);
             for (int i = 0; i < missles; ++i) {
+                if(a.hit&&b.hit&&c.hit){
+                    //gameOver();
+                    game=false;
+                    break;
+                }
                 o=r.nextInt(3);
                 while(true) {
                     if (o == 0) {
@@ -219,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
                 dx = -dx;
             if ((posy > height) || (posy < 0))
                 dy = -dy;
-
+            Log.e("Height",height+" u");
             for (int i = 0; i < m.size(); ++i)
                 m.get(i).update(height,width);
 
@@ -231,6 +267,7 @@ public class MainActivity extends AppCompatActivity {
 
                 width = canvas.getWidth();
                 height = canvas.getHeight();
+                Log.e("Height",height+" d");
 
                 // Draw the background color
                 canvas.drawColor(Color.argb(255, 0, 0, 0));
@@ -249,9 +286,30 @@ public class MainActivity extends AppCompatActivity {
                     if(m.get(i).size<=0)m.remove(i);
                 }
                 paint.setStyle(Paint.Style.FILL);
-                a.draw(canvas,paint,1);
-                b.draw(canvas,paint,3);
-                c.draw(canvas,paint,5);
+                a.draw(canvas,paint,1,height,width);
+                b.draw(canvas,paint,3,height,width);
+                c.draw(canvas,paint,5,height,width);
+
+                textView.draw(canvas);
+
+                if(!start){
+                    paint.setColor(Color.argb(255,0,255,0));
+                    Rect r = new Rect(width/2-100, height/2-50, width/2+100, height/2+50);
+                    canvas.drawRect(r,paint);
+                    paint.setColor(Color.argb(255,255,255,255));
+                    paint.setTextSize(25);
+                    canvas.drawText("Start Game", width/2-(paint.measureText("Start Game")/2),(float)(height/2+12.5),paint);
+                }
+
+                if(!game){
+                    paint.setColor(Color.argb(255,0,255,0));
+                    Rect r = new Rect(width/2-100, height/2-50, width/2+100, height/2+50);
+                    canvas.drawRect(r,paint);
+                    paint.setColor(Color.argb(255,255,255,255));
+                    paint.setTextSize(25);
+                    canvas.drawText("Game Over", width/2-(paint.measureText("Game Over")/2),(float)(height/2-12.5),paint);
+                    canvas.drawText("Restart?", width/2-(paint.measureText("Restart?")/2),(float)(height/2+37.5),paint);
+                }
 
                 // canvas.drawCircle(b.x, b.y, 50, paint);
 
@@ -278,10 +336,25 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public boolean onTouchEvent(MotionEvent motionEvent) {
             if (motionEvent.getAction() == android.view.MotionEvent.ACTION_DOWN) {
-                if(paused) {
+                /*if(paused) {
                     paused = !paused;
                     return true;
+                }*/
+                if(!start){
+                    if((motionEvent.getX()>width/2-100)&&(motionEvent.getX()<width/2+100)&&(motionEvent.getY()<height/2+50)&&(motionEvent.getY()>height/2-50)){
+                        gameOver();
+                    }
+                    Log.e("Click","start");
+                    return true;
                 }
+                if(!game){
+                    if((motionEvent.getX()>width/2-100)&&(motionEvent.getX()<width/2+100)&&(motionEvent.getY()<height/2+50)&&(motionEvent.getY()>height/2-50)){
+                        gameOver();
+                    }
+                    Log.e("Click","game");
+                    return true;
+                }
+                Log.e("Click","fire");
                 xy[0] = motionEvent.getX();
                 xy[1] = motionEvent.getY();
                 int fire=0;

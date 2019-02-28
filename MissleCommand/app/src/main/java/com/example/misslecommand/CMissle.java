@@ -13,7 +13,7 @@ public class CMissle {
 
     public CMissle(int launch,int height,int x,int y){
         this.x=launch;
-        this.y=height-150;
+        this.y=height-50;
         tarx=x;
         tary=y;
         tar=false;
