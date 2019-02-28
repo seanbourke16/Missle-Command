@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
         int level;
         int missles;
+        int speed;
 
 
         public CommandView(Context context) {
@@ -82,25 +83,34 @@ public class MainActivity extends AppCompatActivity {
             dx = 20;
             dy = 45;
             level=1;
-            missles=20;
-            for (int i = 0; i < 20; ++i) {
-                m.add(new Missle());
-                m.get(i).x = r.nextInt(500);
-                m.get(i).y = 0;
-                m.get(i).dx = r.nextInt(6) - 3;
-                m.get(i).dy = r.nextInt(4)+2;
-            }
+            missles=5;
+            speed=5;
+            /*for (int i = 0; i < 10; ++i) {
+                int o=r.nextInt(3);
+                if(o==0) {
+                    m.add(new Missle(r.nextInt(width), 0, 1, height - 50, r.nextInt(5) + 2));
+                }
+            }*/
+            //startLevel(5,5);
 
 
             while (playing)
             {
+                if(m.size()==0){
+                    startLevel(missles,speed);
+                    missles+=5;
+                    speed++;
+                }
                 if (!paused) {
                     update();
                     a.update(height,width,canvas,paint);
                     b.update(height,width,canvas,paint);
                     c.update(height,width,canvas,paint);
                 }
-                checkCollision();
+                checkGroundCollision();
+                checkAirCollision(a.explosions());
+                checkAirCollision(b.explosions());
+                checkAirCollision(c.explosions());
                 draw();
                 try {
                     Thread.sleep(50);
@@ -110,13 +120,91 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public void checkCollision(){
-            for(int x=0;x<m.size();x++){
-                if(m.get(x).y>height-50){
-                    m.get(x).dx=0;
-                    m.get(x).dy=0;
+        public void startLevel(int missles,int speed){
+            /*try{
+                wait(1000);
+            }
+            catch(InterruptedException e){
+                Log.e("Wait","wait error");
+            }*/
+            Random r=new Random();
+            int o;
+            if(!a.hit)a.missles=9+(missles/5*2);
+            if(!b.hit)b.missles=9+(missles/5*2);
+            if(!c.hit)c.missles=9+(missles/5*2);
+            for (int i = 0; i < missles; ++i) {
+                o=r.nextInt(3);
+                while(true) {
+                    if (o == 0) {
+                        if (!a.hit) {
+                            m.add(new Missle(r.nextInt(width), 0, r.nextInt(width/10*3), height, r.nextInt(speed) + 2));
+                            m.get(i).setTrajectorty();
+                            break;
+                        }
+                        else{
+                            o++;
+                        }
+                    }
+                    if (o == 1) {
+                        if (!b.hit) {
+                            m.add(new Missle(r.nextInt(width), 0, (width/10*3)+r.nextInt(width/5*2), height, r.nextInt(speed) + 2));
+                            m.get(i).setTrajectorty();
+                            break;
+                        }
+                        else{
+                            o++;
+                        }
+                    }
+                    if (o == 2) {
+                        if (!c.hit) {
+                            m.add(new Missle(r.nextInt(width), 0, (width/10*7)+r.nextInt(width/10*3), height, r.nextInt(speed) + 2));
+                            m.get(i).setTrajectorty();
+                            break;
+                        }
+                        else{
+                            o=0;
+                        }
+                    }
                 }
             }
+        }
+
+        public void checkGroundCollision(){
+            for(int x=0;x<m.size();x++){
+                if(m.get(x).y>height-50) {
+                    m.get(x).dx = 0;
+                    m.get(x).dy = 0;
+                    if ((m.get(x).x > (width / 5 * 0)) && (m.get(x).x < (width / 5 * 1))){
+                        a.hit = true;
+                        Log.e("Ground",m.get(x).x+" "+(width / 5 * 0)+" "+(width / 5 * 1)+" "+(m.get(x).x > (width / 5 * 0))+" "+(m.get(x).x < (width / 5 * 1)));
+                    }
+                    if ((m.get(x).x > (width / 5 * 2)) && (m.get(x).x < (width / 5 * 3))){
+                        b.hit = true;
+                        Log.e("Ground",m.get(x).x+" "+(width / 5 * 2)+" "+(width / 5 * 3)+" "+(m.get(x).x > (width / 5 * 2))+" "+(m.get(x).x < (width / 5 * 3)));
+                    }
+                    if ((m.get(x).x > (width / 5 * 4)) && (m.get(x).x < (width / 5 * 5))){
+                        c.hit = true;
+                        Log.e("Ground",m.get(x).x+" "+(width / 5 * 4)+" "+(width / 5 * 5)+" "+(m.get(x).x > (width / 5 * 4))+" "+(m.get(x).x < (width / 5 * 5)));
+                    }
+                    m.remove(x);
+                }
+            }
+        }
+
+        public void checkAirCollision(ArrayList<CMissle> g){
+            for(int x=0;x<g.size();x++){
+               for(int y=0;y<m.size();y++){
+                   if(dist(g.get(x),m.get(y))<g.get(x).size){
+                       m.get(y).dx=0;
+                       m.get(y).dy=0;
+                       m.get(y).explosion=true;
+                   }
+               }
+            }
+        }
+
+        public double dist(CMissle g1, Missle m1){
+            return Math.sqrt(((g1.x-m1.x)*(g1.x-m1.x))+((g1.y-m1.y)*(g1.y-m1.y)));
         }
 
         public void update() {
@@ -153,13 +241,14 @@ public class MainActivity extends AppCompatActivity {
 
 
                 // canvas.drawCircle(posx, posy, 30l, paint);
-                for (int i = 0; i < 5; ++i) {
+                for (int i = 0; i < m.size(); ++i) {
                     //m.get(i).width = width;
                     //m.get(i).height = height;
+                    paint.setColor(Color.argb(255, 255, 255, 255));
                     m.get(i).draw(canvas, paint);
+                    if(m.get(i).size<=0)m.remove(i);
                 }
                 paint.setStyle(Paint.Style.FILL);
-                paint.setColor(Color.argb(255,255,0,0));
                 a.draw(canvas,paint,1);
                 b.draw(canvas,paint,3);
                 c.draw(canvas,paint,5);
@@ -189,35 +278,39 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public boolean onTouchEvent(MotionEvent motionEvent) {
             if (motionEvent.getAction() == android.view.MotionEvent.ACTION_DOWN) {
-                if(paused)paused = !paused;
+                if(paused) {
+                    paused = !paused;
+                    return true;
+                }
                 xy[0] = motionEvent.getX();
                 xy[1] = motionEvent.getY();
                 int fire=0;
+                double g=xy[0];
                 while(fire<3) {
-                    if (xy[0] < width / 3) {
+                    if (g < width / 3) {
                         if (a.missles > 0) {
-                            fire=5;
                             a.fire((int) xy[0], (int) xy[1]);
+                            break;
                         } else {
-                            xy[0]+=width/3;
+                            g+=width/3;
                             fire++;
                         }
                     }
-                    if(xy[0]<width/3*2){
+                    if(g<(width/3*2)){
                         if (b.missles > 0) {
-                            fire=5;
                             b.fire((int) xy[0], (int) xy[1]);
+                            break;
                         } else {
-                            xy[0]+=width/3;
+                            g+=width/3;
                             fire++;
                         }
                     }
-                    if(xy[0]<width){
+                    if(g<width){
                         if (c.missles > 0) {
-                            fire=5;
                             c.fire((int) xy[0], (int) xy[1]);
+                            break;
                         } else {
-                            xy[0]=width/3;
+                            g=width/3;
                             fire++;
                         }
                     }
